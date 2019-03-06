@@ -28,47 +28,19 @@
 #include <Adafruit_PN532.h> // Library for use of the Adafruit NFC/RFID Shield
 #include <WiFiNINA.h> // Library for Wifi connection
 
-// If using the breakout with SPI, define the pins for SPI communication.
-#define PN532_SCK  (2)
-#define PN532_MOSI (3)
-#define PN532_SS   (4)
-#define PN532_MISO (5)
-
 // If using the breakout or shield with I2C, define just the pins connected
 // to the IRQ and reset lines.  Use the values below (2, 3) for the shield!
 #define PN532_IRQ   (2)
 #define PN532_RESET (3)  // Not connected by default on the NFC Shield
 
-// Uncomment just _one_ line below depending on how your breakout or shield
-// is connected to the Arduino:
+Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 
-// Use this line for a breakout with a software SPI connection (recommended):
-Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
-
-// Use this line for a breakout with a hardware SPI connection.  Note that
-// the PN532 SCK, MOSI, and MISO pins need to be connected to the Arduino's
-// hardware SPI SCK, MOSI, and MISO pins.  On an Arduino Uno these are
-// SCK = 13, MOSI = 11, MISO = 12.  The SS line can be any digital IO pin.
-//Adafruit_PN532 nfc(PN532_SS);
-
-// Or use this line for a breakout or shield with an I2C connection:
-// Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
-
-#if defined(ARDUINO_ARCH_SAMD)
-// for Zero, output on USB Serial console, remove line below if using programming port to program the Zero!
-// also change #define in Adafruit_PN532.cpp library file
-   #define Serial SerialUSB
-#endif
-
-#include "arduino_secrets.h" // header folder containing WiFi SSID and password. Used to maintain privacy of WiFi credentials
+#include "arduino_secrets.h" // header file containing WiFi SSID and password. Used to maintain privacy of WiFi credentials
 char ssid[] = SECRET_SSID;        // your network SSID (name)
 char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
 void setup(void) {
-  #ifndef ESP8266
-    while (!Serial); // for Leonardo/Micro/Zero
-  #endif
   Serial.begin(115200);
   Serial.println("Hello!");
 
@@ -90,11 +62,6 @@ void setup(void) {
     delay(10000);
   }
   
-  // you're connected now, so print out the data:
-  Serial.print("You're connected to the network");
-  printCurrentNet();
-  printWifiData();
-
   // you're connected now, so print out the data:
   Serial.print("You're connected to the network");
   printCurrentNet();
