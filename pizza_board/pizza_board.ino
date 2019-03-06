@@ -20,26 +20,13 @@
     Page 4 is read by default since this is the first 'general-
     purpose' page on the tags.
 
-
-This is an example sketch for the Adafruit PN532 NFC/RFID breakout boards
-This library works with the Adafruit NFC breakout 
-  ----> https://www.adafruit.com/products/364
- 
-Check out the links above for our tutorials and wiring diagrams 
-These chips use SPI or I2C to communicate.
-
-Adafruit invests time and resources providing this open source code, 
-please support Adafruit and open-source hardware by purchasing 
-products from Adafruit!
-
-*/
 /**************************************************************************/
+
+
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h> // Library for use of the Adafruit NFC/RFID Shield
-
-// Library for Wifi connection
-#include <WiFiNINA.h>
+#include <WiFiNINA.h> // Library for Wifi connection
 
 // If using the breakout with SPI, define the pins for SPI communication.
 #define PN532_SCK  (2)
@@ -56,7 +43,7 @@ products from Adafruit!
 // is connected to the Arduino:
 
 // Use this line for a breakout with a software SPI connection (recommended):
-// Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
+Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 
 // Use this line for a breakout with a hardware SPI connection.  Note that
 // the PN532 SCK, MOSI, and MISO pins need to be connected to the Arduino's
@@ -65,7 +52,7 @@ products from Adafruit!
 //Adafruit_PN532 nfc(PN532_SS);
 
 // Or use this line for a breakout or shield with an I2C connection:
-Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
+// Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 
 #if defined(ARDUINO_ARCH_SAMD)
 // for Zero, output on USB Serial console, remove line below if using programming port to program the Zero!
@@ -191,7 +178,7 @@ void loop(void) {
         // success = nfc.mifareclassic_WriteDataBlock (4, data);
 
         // Try to read the contents of block 4
-        // success = nfc.mifareclassic_ReadDataBlock(4, data);
+        success = nfc.mifareclassic_ReadDataBlock(4, data);
     
         if (success)
         {
