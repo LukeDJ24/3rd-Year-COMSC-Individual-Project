@@ -40,37 +40,44 @@ char ssid[] = SECRET_SSID;        // your network SSID (name)
 char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
+//char *ingredients[16];//limited to 16 ingredients per pizza
+
+// char blah[15] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+char *ingredients[15];
+// int ingredientsCount = 0; //to count the ingredients in the array
+
 void setup(void) {
   Serial.begin(115200);
+  delay(1000);
   Serial.println("Hello!");
 
-  // check for the WiFi module:
-  if (WiFi.status() == WL_NO_MODULE) {
-    Serial.println("Communication with WiFi module failed!");
-    // don't continue
-    while (true);
-  }
-
-  // attempt to connect to Wifi network:
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to WPA SSID: ");
-    Serial.println(ssid);
-    // Connect to WPA/WPA2 network:
-    status = WiFi.begin(ssid, pass);
-
-    // wait 10 seconds for connection:
-    delay(10000);
-  }
+//  // check for the WiFi module:
+//  if (WiFi.status() == WL_NO_MODULE) {
+//    Serial.println("Communication with WiFi module failed!");
+//    // don't continue
+//    while (true);
+//  }
+//
+//  // attempt to connect to Wifi network:
+//  while (status != WL_CONNECTED) {
+//    Serial.print("Attempting to connect to WPA SSID: ");
+//    Serial.println(ssid);
+//    // Connect to WPA/WPA2 network:
+//    status = WiFi.begin(ssid, pass);
+//
+//    // wait 10 seconds for connection:
+//    delay(10000);
+//  }
   
-  // you're connected now, so print out the data:
-  Serial.print("You're connected to the network");
-  printCurrentNet();
-  printWifiData();
-   
-  String fv = WiFi.firmwareVersion();
-  if (fv < "1.0.0") {
-    Serial.println("Please upgrade the firmware");
-  }
+//  // you're connected now, so print out the data:
+//  Serial.print("You're connected to the network");
+//  printCurrentNet();
+//  printWifiData();
+//   
+//  String fv = WiFi.firmwareVersion();
+//  if (fv < "1.0.0") {
+//    Serial.println("Please upgrade the firmware");
+//  }
 
   nfc.begin();
 
@@ -141,7 +148,7 @@ void loop(void) {
     
         // If you want to write something to block 4 to test with, uncomment
         // the following line and this text should be read back in a minute
-        // memcpy(data, (const uint8_t[]){ 'a', 'd', 'a', 'f', 'r', 'u', 'i', 't', '.', 'c', 'o', 'm', 0, 0, 0, 0 }, sizeof data);
+        // memcpy(data, (const uint8_t[]){ 'p', 'i', 'n', 'e', 'a', 'p', 'p', 'l', 'e', 0, 0, 0, 0, 0, 0, 0 }, sizeof data);
         // success = nfc.mifareclassic_WriteDataBlock (4, data);
 
         // Try to read the contents of block 4
@@ -151,7 +158,38 @@ void loop(void) {
         {
           // Data seems to have been read ... spit it out
           Serial.println("Reading Block 4:");
-          nfc.PrintHexChar(data, 16);
+
+          int counter = 0;
+          for (int i = 0; i < 16; i++){
+            if(data[i] != NULL) {
+              counter++;
+            }
+          }
+            
+          nfc.PrintHexChar(data, counter);
+
+           int ingredientsCount = 0;
+
+          for (int i = 0; i < 16; i++){
+            if (ingredients[i] != NULL) {
+              Serial.println("Ingredients is not null");
+              printIngredients();
+              ingredientsCount++;
+            }
+          }
+          
+          if (ingredientsCount > 15){
+            Serial.println("Too many ingredients");
+          }
+          else {
+            ingredients[ingredientsCount] = data;
+          }
+        
+          if (ingredientsCount == 3) {
+            Serial.println("Ingredients is 4");
+            printIngredients();
+          }
+          
           Serial.println("");
       
           // Wait a bit before reading the card again
@@ -250,7 +288,12 @@ void currentConnection() {
   Serial.println(rssi);
 }
 
-
+void printIngredients() {
+  for (int i = 0; i < 6; i++){
+    Serial.print("Ingredients: ");
+    Serial.println(ingredients[i]);
+  }
+}
 /*
  * To do list! 
  * 1) identify the identifiers of the RFID cards
