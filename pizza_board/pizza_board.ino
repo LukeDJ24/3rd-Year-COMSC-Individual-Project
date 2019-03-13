@@ -40,11 +40,8 @@ char ssid[] = SECRET_SSID;        // your network SSID (name)
 char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
-//char *ingredients[16];//limited to 16 ingredients per pizza
-
-// char blah[15] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-char *ingredients[15];
-// int ingredientsCount = 0; //to count the ingredients in the array
+uint8_t readIngredient = 0;
+String ingredients[16];
 
 void setup(void) {
   Serial.begin(115200);
@@ -146,8 +143,6 @@ void loop(void) {
         Serial.println("Sector 1 (Blocks 4..7) has been authenticated");
         uint8_t data[16];
     
-        // If you want to write something to block 4 to test with, uncomment
-        // the following line and this text should be read back in a minute
         // memcpy(data, (const uint8_t[]){ 'p', 'i', 'n', 'e', 'a', 'p', 'p', 'l', 'e', 0, 0, 0, 0, 0, 0, 0 }, sizeof data);
         // success = nfc.mifareclassic_WriteDataBlock (4, data);
 
@@ -161,32 +156,35 @@ void loop(void) {
 
           int counter = 0;
           for (int i = 0; i < 16; i++){
-            if(data[i] != NULL) {
+            if(data[i] != 00) {
               counter++;
             }
           }
             
-          nfc.PrintHexChar(data, counter);
+          nfc.PrintHexChar(data, counter); //reads out what has been written to the card and removes the full stops after it
 
-           int ingredientsCount = 0;
-
+          // Count how many ingredients are already in the array
+          
+          int ingredientsCount = 0;
           for (int i = 0; i < 16; i++){
             if (ingredients[i] != NULL) {
-              Serial.println("Ingredients is not null");
-              printIngredients();
+              //Serial.println("Ingredients is not null");
               ingredientsCount++;
-            }
+              }
           }
           
           if (ingredientsCount > 15){
+            //Makes sure that too many ingredients are added to the array
             Serial.println("Too many ingredients");
           }
           else {
-            ingredients[ingredientsCount] = data;
+            String str = (char*)data;
+            //add the data thats been read in and add it to the correct place in the array
+            ingredients[ingredientsCount] = str;
           }
-        
+        // just used to print out the igredients to test its working
           if (ingredientsCount == 3) {
-            Serial.println("Ingredients is 4");
+            Serial.println("Number of Ingredients = 4");
             printIngredients();
           }
           
@@ -198,37 +196,16 @@ void loop(void) {
         else
         {
           Serial.println("Ooops ... unable to read the requested block.  Try another key?");
+          Serial.println("");
         }
       }
       else
       {
         Serial.println("Ooops ... authentication failed: Try another key?");
-      }
-    }
-    
-    if (uidLength == 7)
-    {
-      // We probably have a Mifare Ultralight card ...
-      Serial.println("Seems to be a Mifare Ultralight tag (7 byte UID)");
-    
-      // Try to read the first general-purpose user page (#4)
-      Serial.println("Reading page 4");
-      uint8_t data[32];
-      success = nfc.mifareultralight_ReadPage (4, data);
-      if (success)
-      {
-        // Data seems to have been read ... spit it out
-        nfc.PrintHexChar(data, 4);
         Serial.println("");
-    
-        // Wait a bit before reading the card again
-        delay(1000);
-      }
-      else
-      {
-        Serial.println("Ooops ... unable to read the requested page!?");
       }
     }
+    
   }
   
 }
