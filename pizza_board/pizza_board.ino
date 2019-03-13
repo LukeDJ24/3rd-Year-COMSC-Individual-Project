@@ -183,6 +183,7 @@ void loop(void) {
             ingredients[ingredientsCount] = str;
           }
         // just used to print out the igredients to test its working
+        // the printingredients function to be used later when needing to print out all the ingredients for the email
           if (ingredientsCount == 3) {
             Serial.println("Number of Ingredients = 4");
             printIngredients();
