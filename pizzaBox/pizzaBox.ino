@@ -5,7 +5,7 @@
 
 #include "arduino_secrets.h" // header file containing WiFi SSID and password. Used to maintain privacy of WiFi credentials
 char ssid[] = SECRET_SSID;        // your network SSID (name)
-char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
+char password[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;
 WiFiClient client;
 
@@ -50,10 +50,12 @@ void setup() {
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
+  
+  pinMode(buttonPin, INPUT_PULLUP);
 
   Array_Init();       // initialize array
   
-  connectWifi();      // initialize WiFi connection
+  //connectWifi();      // initialize WiFi connection
   
 }
 
@@ -61,7 +63,7 @@ void loop() {
 
   int buttonValue = digitalRead(buttonPin);
 
-  if (buttonValue == LOW){
+  if(digitalRead(buttonPin) == LOW){
   Serial.println("button has been pressed!");
 //    for (int x = 0; x < 1000 ;x++){
 //     Check_EPC();
@@ -71,7 +73,7 @@ void loop() {
   } else {
      Serial.println("Waiting for button to be pressed...");
   }
-
+  delay(1000);
 }
 
 void connectWifi() {
