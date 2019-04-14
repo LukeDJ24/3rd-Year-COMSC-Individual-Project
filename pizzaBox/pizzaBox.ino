@@ -71,11 +71,11 @@ SoftwareSerial softSerial(2, 3); //RX, TX
   * 1 = tag info found
   * 2 = 1 + programflow + temperature info
   * 3 = 2 + Nano debug  */
-#define PRMDEBUG 1
+#define PRMDEBUG 2
 
-int buttonPin = 12;
+int buttonPin = 12; // set the pin to which the button is connected
 
-RFID nano;
+RFID nano; //Instantiate an instance of RFID
 
 #define SERIAL 115200
 
@@ -99,7 +99,9 @@ void setup() {
   }
 
   while (!Serial); //Wait for the serial port to come online
-
+  
+  Serial.println("Set up Nano");
+  
   if (setupNano(38400) == false) //Configure nano to run at 38400bps
   {
     Serial.println(F("Module failed to respond. Please check wiring."));
@@ -107,27 +109,30 @@ void setup() {
   }
   
   pinMode(buttonPin, INPUT_PULLUP);
-
-  Array_Init();       // initialize array
   
+  Array_Init();       // initialize array
+
   connectWifi();      // initialize WiFi connection
   
 }
 
 void loop() {
 
-  lcd.setCursor(0, 0);
+  lcd.setCursor(0, 0); // Set the cursor of the LCD display to Row 0, Col 0
 
   int buttonValue = digitalRead(buttonPin);
 
   if(digitalRead(buttonPin) == LOW){
   Serial.println("button has been pressed!");
   lcd.print("Button pressed!");
-  //for (int x = 0; x < 1000 ;x++){
+//  for (int x = 0; x < 1000 ;x++){
+//    Serial.println("EPC check number =");
+//    Serial.println(x);
     Check_EPC();
-  //}
+//  }
 
    postData();
+   
   } else {
      Serial.println("Waiting for button to be pressed...");
      lcd.print("Please order...");
@@ -186,7 +191,9 @@ void postData() {
   // Combine yourdatacolumn header (yourdata=) with the data recorded from your arduino
   // (yourarduinodata) and package them into the String yourdata which is what will be
   // sent in your POST request
-  vector2string();
+
+  
+  // vector2string();
   yourdata = yourdatacolumn + yourarduinodata;
 
   // If there's a successful connection, send the HTTP POST request
@@ -293,14 +300,13 @@ void Array_Add(uint8_t *msg, byte mlength)
 
 void Check_EPC()
 {
-  Serial.print("checking EPC");
+  Serial.println("checking EPC");
   uint8_t myEPC[EPC_ENTRY];     // Most EPCs are 12 bytes
-
-  //Serial.print("In the check epc fucktion");
 
   if (nano.check() == true)     // Check to see if any new data has come in from module
   {
     byte responseType = nano.parseResponse(); //Break response into tag ID, RSSI, frequency, and timestamp
+    Serial.println("if statement 1");
 
     if (responseType == RESPONSE_IS_KEEPALIVE)
     {
@@ -425,18 +431,18 @@ void vector2string() {
       sprintf(HtmlBuf, "%s %02x",HtmlBuf, epcs[i].epc[j]);
 
     // add detection count ?
-    if (detect_cnt) sprintf(HtmlBuf, "%s:%02d",HtmlBuf, epcs[i].cnt);
+    // if (detect_cnt) sprintf(HtmlBuf, "%s:%02d",HtmlBuf, epcs[i].cnt);
 
     header += HtmlBuf;
 
     // if epc_clr was called before, it will clear entry after adding EP
     //if (enable_clr){
-      Array_Rmv_Entry(i);
-      esize--;
-      i=0;
+     // Array_Rmv_Entry(i);
+     // esize--;
+     // i=0;
     //}
     //else
-      i++;    // next EPC
+     // i++;    // next EPC
   //}
   }
 
