@@ -73,13 +73,22 @@ SoftwareSerial softSerial(2, 3); //RX, TX
   * 3 = 2 + Nano debug  */
 #define PRMDEBUG 2
 
-int buttonPin = 12; // set the pin to which the button is connected
+//Variables to control how long we check for new tags
+unsigned long period = 15000;
 
-RFID nano; //Instantiate an instance of RFID
+// set the pin to which the button is connected
+int buttonPin = 12;
+
+//Instantiate an instance of nano
+RFID nano; 
 
 #define SERIAL 115200
 
 void setup() {
+  
+  Serial.begin(SERIAL);
+  connectWifi();      // initialize WiFi connection
+  
   // set up the LCD's number of rows and columns: 
   lcd.begin(16, 2);
   lcd.setBacklight(HIGH);
@@ -87,34 +96,13 @@ void setup() {
   // Print a message to the LCD.
   lcd.print("Please order...");
   
-  Serial.begin(SERIAL);
-
-  while (!Serial); //Wait for the serial port to come online
-  
-  //Set up the RFID sheild
-  if (setupNano(38400) == false) //Configure nano to run at 38400bps
-  {
-    Serial.println(F("Module failed to respond. Please check wiring."));
-    while (1); //Freeze!
-  }
-
-  while (!Serial); //Wait for the serial port to come online
-  
-  Serial.println("Set up Nano");
-  
-  if (setupNano(38400) == false) //Configure nano to run at 38400bps
-  {
-    Serial.println(F("Module failed to respond. Please check wiring."));
-    while (1); //Freeze!
-  }
-  
   pinMode(buttonPin, INPUT_PULLUP);
+    
+  Init_RFID();        // initialize RFID shield
   
   Array_Init();       // initialize array
-
-  connectWifi();      // initialize WiFi connection
   
-}
+  }
 
 void loop() {
 
@@ -123,15 +111,22 @@ void loop() {
   int buttonValue = digitalRead(buttonPin);
 
   if(digitalRead(buttonPin) == LOW){
-  Serial.println("button has been pressed!");
-  lcd.print("Button pressed!");
-//  for (int x = 0; x < 1000 ;x++){
+    Serial.println("button has been pressed!");
+    lcd.print("Button pressed!");
+//    for (int x = 0; x < 1000 ;x++){
 //    Serial.println("EPC check number =");
 //    Serial.println(x);
+//     
+    unsigned long startTime = millis();
+    while(millis() - startTime < period){
     Check_EPC();
-//  }
-
-   postData();
+    }
+    
+    Serial.println("Finished checking for tags!");
+    postData();
+    
+    //Clear the array after the data has been sent.
+    //Array_Clr;
    
   } else {
      Serial.println("Waiting for button to be pressed...");
@@ -139,6 +134,10 @@ void loop() {
   }
   delay(1000);
 }
+
+//////////////////////////////////////////////////////////////////////
+//                   WiFi connection routines                       //
+//////////////////////////////////////////////////////////////////////
 
 void connectWifi() {
   // check for the WiFi module:
@@ -185,15 +184,21 @@ void printWifiStatus() {
   Serial.print(rssi);
   Serial.println(" dBm");
 }
+////////////////////////////////////////////////////////////////
+//                   Post Data routines                       //
+////////////////////////////////////////////////////////////////
 
 // This method makes a HTTP connection to the server and POSTs data
 void postData() {
   // Combine yourdatacolumn header (yourdata=) with the data recorded from your arduino
   // (yourarduinodata) and package them into the String yourdata which is what will be
   // sent in your POST request
-
+  Serial.println("In the postdata function");
   
-  // vector2string();
+  vector2string();
+  
+  Serial.println("Out of v2s and back into postData()");
+  
   yourdata = yourdatacolumn + yourarduinodata;
 
   // If there's a successful connection, send the HTTP POST request
@@ -298,15 +303,92 @@ void Array_Add(uint8_t *msg, byte mlength)
   epcs.push_back(newepc);     // append to end
 }
 
+////////////////////////////////////////////////////////////
+//                   RFID routines                        //
+////////////////////////////////////////////////////////////
+
+void Init_RFID()
+{
+
+retry:
+  Serial.println(F("try to connect to RFID reader"));
+
+  // Configure Nano to run at certain speed
+  int RunStatus = setupNano(RFID_SERIAL_SPEED);
+
+  if (RunStatus == 0)
+  {
+    serialTrigger(F("Module failed to respond. Please check wiring."));
+    yield();
+    goto retry;
+  }
+
+  if (RunStatus  == 1)           // was not yet in continuoos mode
+  {
+    nano.setRegion(RFID_Region); // Set to correct region
+    nano.setTagProtocol();       // Set protocol to GEN2
+    nano.setAntennaPort();       // Set TX/RX antenna ports to 1
+    nano.setReadPower(RFID_POWER); //5.00 dBm. Higher values may caues USB port to brown out
+    //Max Read TX Power is 27.00 dBm and may cause temperature-limit throttling
+
+    nano.startReading();         // Begin scanning for tags
+  }
+
+  Serial.println("RFID shield initialized");
+}
+
+/* Gracefully handles a reader that is already configured and already reading continuously */
+int setupNano(long baudRate)
+{
+  if (PRMDEBUG == 3) nano.enableDebugging(Serial);
+
+  nano.begin(softSerial); //Tell the library to communicate over software serial port
+
+  //Test to see if we are already connected to a module
+  //This would be the case if the Arduino has been reprogrammed/rebooted and the module has stayed powered
+  softSerial.begin(baudRate);       // For this test, assume module is already at our desired baud rate
+
+  uint8_t val1 = 0;
+
+  while(val1 < 2)
+  {
+    nano.getVersion();
+
+    if (nano.msg[0] == ERROR_WRONG_OPCODE_RESPONSE )
+    {
+      if (PRMDEBUG > 1) Serial.println(F("Module continuously reading. Not Asking it to stop..."));
+      return(2);
+    }
+
+    else if (nano.msg[0] != ALL_GOOD)
+    {
+      if (PRMDEBUG > 1) Serial.println(F("Try reset RFID speed"));
+
+      // The module did not respond so assume it's just been powered on and communicating at 115200bps
+      softSerial.begin(115200);    // Start software serial at 115200
+
+      nano.setBaud(baudRate);   // Tell the module to go to the chosen baud rate.
+
+      softSerial.begin(baudRate);  // Start the software serial port, this time at user's chosen baud rate
+      delay(1000);              // the driver is normally not waiting for response from the Nano. So we need to delay and wait
+    }
+    else
+      return(1);                // Responded, but have to be set in the right mode
+
+    val1++;
+  }
+
+  return(0);
+}
+
+/* try to read EPC from tag and add to array */
 void Check_EPC()
 {
-  Serial.println("checking EPC");
   uint8_t myEPC[EPC_ENTRY];     // Most EPCs are 12 bytes
 
   if (nano.check() == true)     // Check to see if any new data has come in from module
   {
     byte responseType = nano.parseResponse(); //Break response into tag ID, RSSI, frequency, and timestamp
-    Serial.println("if statement 1");
 
     if (responseType == RESPONSE_IS_KEEPALIVE)
     {
@@ -354,61 +436,13 @@ void Check_EPC()
   }
 }
 
-//Gracefully handles a reader that is already configured and already reading continuously
-//Because Stream does not have a .begin() we have to do this outside the library
-boolean setupNano(long baudRate)
-{
-  nano.begin(softSerial); //Tell the library to communicate over software serial port
-
-  //Test to see if we are already connected to a module
-  //This would be the case if the Arduino has been reprogrammed and the module has stayed powered
-  softSerial.begin(baudRate); //For this test, assume module is already at our desired baud rate
-  while (softSerial.isListening() == false); //Wait for port to open
-
-  //About 200ms from power on the module will send its firmware version at 115200. We need to ignore this.
-  while (softSerial.available()) softSerial.read();
-
-  nano.getVersion();
-
-  if (nano.msg[0] == ERROR_WRONG_OPCODE_RESPONSE)
-  {
-    //This happens if the baud rate is correct but the module is doing a ccontinuous read
-    nano.stopReading();
-
-    Serial.println(F("Module continuously reading. Asking it to stop..."));
-
-    delay(1500);
-  }
-  else
-  {
-    //The module did not respond so assume it's just been powered on and communicating at 115200bps
-    softSerial.begin(115200); //Start software serial at 115200
-
-    nano.setBaud(baudRate); //Tell the module to go to the chosen baud rate. Ignore the response msg
-
-    softSerial.begin(baudRate); //Start the software serial port, this time at user's chosen baud rate
-
-    delay(250);
-  }
-
-  //Test the connection
-  nano.getVersion();
-  if (nano.msg[0] != ALL_GOOD) return (false); //Something is not right
-
-  //The M6E has these settings no matter what
-  nano.setTagProtocol(); //Set protocol to GEN2
-
-  nano.setAntennaPort(); //Set TX/RX antenna ports to 1
-
-  return (true); //We are ready to rock
-}
-
 void vector2string() {
+  
+  Serial.println("In vector2string function");
 
   int j, esize, i = 0;
   bool sent_comma = false;
-  bool detect_cnt = false;
-
+  
   // use to store data to be send
   char HtmlBuf[HTML_BUFFER];
 
@@ -420,7 +454,7 @@ void vector2string() {
 
   // loop through the complete list
   while ( i < esize ) {
-
+    Serial.println("1st while loop");
     // add comma in between EPC's
     if (sent_comma) header += ",";
     else sent_comma = true;
@@ -430,20 +464,7 @@ void vector2string() {
     for (j = 0 ; j < EPC_ENTRY; j++)
       sprintf(HtmlBuf, "%s %02x",HtmlBuf, epcs[i].epc[j]);
 
-    // add detection count ?
-    // if (detect_cnt) sprintf(HtmlBuf, "%s:%02d",HtmlBuf, epcs[i].cnt);
-
     header += HtmlBuf;
-
-    // if epc_clr was called before, it will clear entry after adding EP
-    //if (enable_clr){
-     // Array_Rmv_Entry(i);
-     // esize--;
-     // i=0;
-    //}
-    //else
-     // i++;    // next EPC
-  //}
   }
 
   yourarduinodata = header;

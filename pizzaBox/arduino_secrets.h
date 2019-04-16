@@ -1,2 +1,2 @@
-#define SECRET_SSID "01101"
-#define SECRET_PASS "lukedj123"
+#define SECRET_SSID "TNCAP729043"
+#define SECRET_PASS "3FADC0BD7B"
