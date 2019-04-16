@@ -126,7 +126,7 @@ void loop() {
     postData();
     
     //Clear the array after the data has been sent.
-    //Array_Clr;
+    Array_Clr;
    
   } else {
      Serial.println("Waiting for button to be pressed...");
@@ -461,10 +461,10 @@ void vector2string() {
 
     // add epc
     HtmlBuf[0] = 0x0;
-    for (j = 0 ; j < EPC_ENTRY; j++)
-      sprintf(HtmlBuf, "%s %02x",HtmlBuf, epcs[i].epc[j]);
-
+    for (j = 0; j < EPC_ENTRY; j++)
+      sprintf(HtmlBuf, "%s %02x",HtmlBuf, epcs[i].epc[j]);     
     header += HtmlBuf;
+    i++;
   }
 
   yourarduinodata = header;
