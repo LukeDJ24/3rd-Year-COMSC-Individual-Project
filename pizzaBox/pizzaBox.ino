@@ -1,46 +1,44 @@
 #include <SPI.h>
-#include <WiFiNINA.h>
+#include <WiFiNINA.h>                 // Library for Wifi connections
 #include <SparkFun_UHF_RFID_Reader.h> // Library for controlling the M6E Nano module
-#include <Vector.h>                   // storage handling
+#include <Vector.h>                   // Storage handling
 
 // include the LCD library code:
 #include "Wire.h"
 #include "Adafruit_LiquidCrystal.h"
 
-// Connect via i2c, default address #0 (A0-A2 not jumpered)
-Adafruit_LiquidCrystal lcd(0);
 
-#include "arduino_secrets.h" // header file containing WiFi SSID and password. Used to maintain privacy of WiFi credentials
-char ssid[] = SECRET_SSID;        // your network SSID (name)
-char password[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
+Adafruit_LiquidCrystal lcd(0); // Connect via i2c, default address #0 (A0-A2 not jumpered)
+
+#include "arduino_secrets.h"      // Header file containing WiFi SSID and password. Used to maintain privacy of WiFi credentials
+char ssid[] = SECRET_SSID;        // Network SSID (name)
+char password[] = SECRET_PASS;    // Network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;
-WiFiClient client;
+WiFiClient client;                // Create an instance of WiFiClient
 
-// EDIT: 'Server' address to match your domain
-char server[] = "192.168.1.81"; // This could also be 192.168.1.18/~me if you are running a server on your computer on a local network.
 
-// This is the data that will be passed into your POST and matches your mysql column
-String yourarduinodata = "";
-String yourdatacolumn = "yourdata=";
-String yourdata;
+char server[] = "192.168.1.81"; // Server address to match domain 
+
+// This is the data that will be passed into the POST
+String arduinodata = "";
+String datacolumn = "data=";
+String data;
+String header = "";
 
 // ==== supporting routines
 void serialTrigger(String message);
 
 #define EPC_COUNT 50        // Max number of unique EPC's
 #define EPC_ENTRY 12        // max bytes in EPC
- /* Option: size of HTML buffer */
-#define HTML_BUFFER 400
-
-String header = "";
+#define HTML_BUFFER 400     // Size of HTML buffer
 
 typedef struct Epcrecv {
-    uint8_t epc[EPC_ENTRY];         // save EPC
-    uint8_t cnt;                    // how often detected
+    uint8_t epc[EPC_ENTRY];         // Save EPC
+    uint8_t cnt;                    // How often detected
 } Epcrecv;
 
-Epcrecv epc_space[EPC_COUNT];       // allocate the space
-Vector <Epcrecv> epcs;              // create vector
+Epcrecv epc_space[EPC_COUNT];       // Allocate the space
+Vector <Epcrecv> epcs;              // Create vector
 
 /////////////////////////////////////////////////
 //            RFID shield Definitions          //
@@ -73,16 +71,13 @@ SoftwareSerial softSerial(2, 3); //RX, TX
   * 3 = 2 + Nano debug  */
 #define PRMDEBUG 2
 
-//Variables to control how long we check for new tags
-unsigned long period = 15000;
+unsigned long period = 15000; // Variables to control how long we check for new tags
 
-// set the pin to which the button is connected
-int buttonPin = 12;
+int buttonPin = 12; // Set the pin to which the button is connected
 
-//Instantiate an instance of nano
-RFID nano; 
+RFID nano; //Instantiate an instance of nano
 
-#define SERIAL 115200
+#define SERIAL 115200 // Defines the baud rate for communication over the serial port
 
 void setup() {
   
@@ -93,8 +88,7 @@ void setup() {
   lcd.begin(16, 2);
   lcd.setBacklight(HIGH);
 
-  // Print a message to the LCD.
-  lcd.print("Please order...");
+  lcd.print("Please order..."); // Print a message to the LCD
   
   pinMode(buttonPin, INPUT_PULLUP);
     
@@ -113,16 +107,16 @@ void loop() {
   if(digitalRead(buttonPin) == LOW){
     Serial.println("button has been pressed!");
     lcd.print("Button pressed!");
-//    for (int x = 0; x < 1000 ;x++){
-//    Serial.println("EPC check number =");
-//    Serial.println(x);
-//     
+
+    // Can for tags for the defined amount of time
     unsigned long startTime = millis();
     while(millis() - startTime < period){
     Check_EPC();
     }
     
     Serial.println("Finished checking for tags!");
+
+    // Send the data collected from the RFID shiel to the server
     postData();
     
     //Clear the array after the data has been sent.
@@ -140,10 +134,9 @@ void loop() {
 //////////////////////////////////////////////////////////////////////
 
 void connectWifi() {
-  // check for the WiFi module:
+  // check for the WiFi module. If failed connection to module then stop.
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with WiFi module failed!");
-    // don't continue
     while (true);
   }
 
@@ -163,7 +156,7 @@ void connectWifi() {
     delay(10000);
   }
 
-  // you're connected now, so print out the data:
+  // Once connected print out the data
   Serial.print("You're connected to the network");
   printWifiStatus();
 }
@@ -190,8 +183,8 @@ void printWifiStatus() {
 
 // This method makes a HTTP connection to the server and POSTs data
 void postData() {
-  // Combine yourdatacolumn header (yourdata=) with the data recorded from your arduino
-  // (yourarduinodata) and package them into the String yourdata which is what will be
+  // Combine datacolumn header (data=) with the data recorded from your arduino
+  // (arduinodata) and package them into the String data which is what will be
   // sent in your POST request
   Serial.println("In the postdata function");
   
@@ -199,7 +192,7 @@ void postData() {
   
   Serial.println("Out of v2s and back into postData()");
   
-  yourdata = yourdatacolumn + yourarduinodata;
+  data = datacolumn + arduinodata;
 
   // If there's a successful connection, send the HTTP POST request
   if (client.connect(server, 80)) {
@@ -214,9 +207,9 @@ void postData() {
     client.println("Connection: close");
     client.println("Content-Type: application/x-www-form-urlencoded;");
     client.print("Content-Length: ");
-    client.println(yourdata.length());
+    client.println(data.length());
     client.println();
-    client.println(yourdata); 
+    client.println(data); 
   } 
   else {
     // If you couldn't make a connection:
@@ -248,13 +241,7 @@ void Array_Clr()
   epcs.clear();
 }
 
-/* Remove a single entry from the array */
-void Array_Rmv_Entry(int i)
-{
-  epcs.remove(i);
-}
-
-/* add entry to array (if not there already) */
+// add entry to array (if not there already
 void Array_Add(uint8_t *msg, byte mlength)
 {
     bool found = false;
@@ -438,7 +425,7 @@ void Check_EPC()
 
 void vector2string() {
   
-  Serial.println("In vector2string function");
+  //Serial.println("In vector2string function");
 
   int j, esize, i = 0;
   bool sent_comma = false;
@@ -454,7 +441,7 @@ void vector2string() {
 
   // loop through the complete list
   while ( i < esize ) {
-    Serial.println("1st while loop");
+    //Serial.println("1st while loop");
     // add comma in between EPC's
     if (sent_comma) header += ",";
     else sent_comma = true;
@@ -462,12 +449,12 @@ void vector2string() {
     // add epc
     HtmlBuf[0] = 0x0;
     for (j = 0; j < EPC_ENTRY; j++)
-      sprintf(HtmlBuf, "%s %02x",HtmlBuf, epcs[i].epc[j]);     
+      sprintf(HtmlBuf, "%s %02x",HtmlBuf, epcs[i].epc[j]);    // sprintf 
     header += HtmlBuf;
     i++;
   }
 
-  yourarduinodata = header;
+  arduinodata = header;
   
 }
 
