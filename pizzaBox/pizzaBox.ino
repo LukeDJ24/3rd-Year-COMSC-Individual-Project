@@ -105,10 +105,10 @@ void loop() {
   int buttonValue = digitalRead(buttonPin);
 
   if(digitalRead(buttonPin) == LOW){
-    Serial.println("button has been pressed!");
+    Serial.println("Order placed!");
     lcd.print("Button pressed!");
 
-    // Can for tags for the defined amount of time
+    // Scan for tags for the defined amount of time
     unsigned long startTime = millis();
     while(millis() - startTime < period){
     Check_EPC();
@@ -188,9 +188,9 @@ void postData() {
   // sent in your POST request
   Serial.println("In the postdata function");
   
-  vector2string();
+  vectorToString();
   
-  Serial.println("Out of v2s and back into postData()");
+  //Serial.println("Out of v2s and back into postData()");
   
   data = datacolumn + arduinodata;
 
@@ -423,9 +423,9 @@ void Check_EPC()
   }
 }
 
-void vector2string() {
+void vectorToString() {
   
-  //Serial.println("In vector2string function");
+  //Serial.println("In vectorToString function");
 
   int j, esize, i = 0;
   bool sent_comma = false;
@@ -449,7 +449,7 @@ void vector2string() {
     // add epc
     HtmlBuf[0] = 0x0;
     for (j = 0; j < EPC_ENTRY; j++)
-      sprintf(HtmlBuf, "%s %02x",HtmlBuf, epcs[i].epc[j]);    // sprintf 
+      sprintf(HtmlBuf, "%s %02x",HtmlBuf, epcs[i].epc[j]);    // %s is replaced with the variable Htmlbuf etc
     header += HtmlBuf;
     i++;
   }
