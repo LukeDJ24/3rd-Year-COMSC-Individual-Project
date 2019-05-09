@@ -62,7 +62,7 @@ SoftwareSerial softSerial(2, 3); //RX, TX
 
   /* Option: define the Readpower between 0 and 27dBm. if only using the
    * USB power, do not go above 5dbm (=500) */
-#define RFID_POWER 500
+#define RFID_POWER 800
 
  /* Option: display debug level/information
   * 0 = no debug information
@@ -82,31 +82,34 @@ RFID nano; //Instantiate an instance of nano
 void setup() {
   
   Serial.begin(SERIAL);
-  connectWifi();      // initialize WiFi connection
   
   // set up the LCD's number of rows and columns: 
   lcd.begin(16, 2);
   lcd.setBacklight(HIGH);
-
-  lcd.print("Please order..."); // Print a message to the LCD
+  lcd.print("Initialising..."); // Print a message to the LCD
   
   pinMode(buttonPin, INPUT_PULLUP);
-    
+  
+  connectWifi();      // initialize WiFi connection
+     
   Init_RFID();        // initialize RFID shield
   
   Array_Init();       // initialize array
+
+  lcd.setCursor(0, 0); // Set the cursor of the LCD display to Row 0, Col 0
+  lcd.print("Please order.."); // Print a message to the LCD
   
   }
 
 void loop() {
-
   lcd.setCursor(0, 0); // Set the cursor of the LCD display to Row 0, Col 0
-
+  
   int buttonValue = digitalRead(buttonPin);
 
   if(digitalRead(buttonPin) == LOW){
+    
     Serial.println("Order placed!");
-    lcd.print("Button pressed!");
+    lcd.print("Order placed!");
 
     // Scan for tags for the defined amount of time
     unsigned long startTime = millis();
