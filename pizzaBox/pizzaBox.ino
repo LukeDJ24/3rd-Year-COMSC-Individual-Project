@@ -62,7 +62,7 @@ SoftwareSerial softSerial(2, 3); //RX, TX
 
   /* Option: define the Readpower between 0 and 27dBm. if only using the
    * USB power, do not go above 5dbm (=500) */
-#define RFID_POWER 800
+#define RFID_POWER 2050
 
  /* Option: display debug level/information
   * 0 = no debug information
@@ -71,7 +71,7 @@ SoftwareSerial softSerial(2, 3); //RX, TX
   * 3 = 2 + Nano debug  */
 #define PRMDEBUG 2
 
-unsigned long period = 15000; // Variables to control how long we check for new tags
+unsigned long period = 30000; // Variables to control how long we check for new tags
 
 int buttonPin = 12; // Set the pin to which the button is connected
 
@@ -98,7 +98,8 @@ void setup() {
 
   lcd.setCursor(0, 0); // Set the cursor of the LCD display to Row 0, Col 0
   lcd.print("Please order.."); // Print a message to the LCD
-  
+  lcd.setCursor(0, 1);
+  lcd.print("");
   }
 
 void loop() {
@@ -115,21 +116,25 @@ void loop() {
     unsigned long startTime = millis();
     while(millis() - startTime < period){
     Check_EPC();
+    lcd.setCursor(0, 0);
+    lcd.print("Checking for");
+    lcd.setCursor(0, 1);
+    lcd.print("Ingredients");
     }
     
     Serial.println("Finished checking for tags!");
 
-    // Send the data collected from the RFID shiel to the server
-    postData();
+    // Send the data collected from the RFID shield to the server
+    // postData();
     
     //Clear the array after the data has been sent.
-    Array_Clr;
+    Array_Clr();
    
   } else {
      Serial.println("Waiting for button to be pressed...");
      lcd.print("Please order...");
   }
-  delay(1000);
+  delay(500);
 }
 
 //////////////////////////////////////////////////////////////////////
