@@ -40,9 +40,7 @@ typedef struct Epcrecv {
 Epcrecv epc_space[EPC_COUNT];       // Allocate the space
 Vector <Epcrecv> epcs;              // Create vector
 
-/////////////////////////////////////////////////
-//            RFID shield Definitions          //
-/////////////////////////////////////////////////
+//RFID shield Definitions
 
 #include <SoftwareSerial.h> //Used for transmitting to the device
 
@@ -62,7 +60,7 @@ SoftwareSerial softSerial(2, 3); //RX, TX
 
   /* Option: define the Readpower between 0 and 27dBm. if only using the
    * USB power, do not go above 5dbm (=500) */
-#define RFID_POWER 2050
+#define RFID_POWER 2700
 
  /* Option: display debug level/information
   * 0 = no debug information
@@ -98,8 +96,7 @@ void setup() {
 
   lcd.setCursor(0, 0); // Set the cursor of the LCD display to Row 0, Col 0
   lcd.print("Please order.."); // Print a message to the LCD
-  lcd.setCursor(0, 1);
-  lcd.print("");
+
   }
 
 void loop() {
@@ -117,29 +114,31 @@ void loop() {
     while(millis() - startTime < period){
     Check_EPC();
     lcd.setCursor(0, 0);
-    lcd.print("Checking for");
+    lcd.print("Checking for   ");
     lcd.setCursor(0, 1);
-    lcd.print("Ingredients");
+    lcd.print("Ingredients....");
     }
     
     Serial.println("Finished checking for tags!");
 
     // Send the data collected from the RFID shield to the server
-    // postData();
+    postData();
     
     //Clear the array after the data has been sent.
     Array_Clr();
    
   } else {
      Serial.println("Waiting for button to be pressed...");
+     lcd.setCursor(0, 0);
      lcd.print("Please order...");
+     lcd.setCursor(0, 1);
+     lcd.print("                ");
   }
   delay(500);
 }
 
-//////////////////////////////////////////////////////////////////////
-//                   WiFi connection routines                       //
-//////////////////////////////////////////////////////////////////////
+
+//WiFi connection routines
 
 void connectWifi() {
   // check for the WiFi module. If failed connection to module then stop.
@@ -185,9 +184,8 @@ void printWifiStatus() {
   Serial.print(rssi);
   Serial.println(" dBm");
 }
-////////////////////////////////////////////////////////////////
-//                   Post Data routines                       //
-////////////////////////////////////////////////////////////////
+
+//Post Data routines
 
 // This method makes a HTTP connection to the server and POSTs data
 void postData() {
@@ -197,8 +195,6 @@ void postData() {
   Serial.println("In the postdata function");
   
   vectorToString();
-  
-  //Serial.println("Out of v2s and back into postData()");
   
   data = datacolumn + arduinodata;
 
@@ -227,9 +223,9 @@ void postData() {
   }
 }
 
-////////////////////////////////////////////////////////////
-//                   ARRAY routines                       //
-////////////////////////////////////////////////////////////
+
+//ARRAY routines
+
 
 /* initialize the array to capture detected EPC */
 void Array_Init()
@@ -298,9 +294,8 @@ void Array_Add(uint8_t *msg, byte mlength)
   epcs.push_back(newepc);     // append to end
 }
 
-////////////////////////////////////////////////////////////
-//                   RFID routines                        //
-////////////////////////////////////////////////////////////
+
+//RFID routines
 
 void Init_RFID()
 {
@@ -466,9 +461,8 @@ void vectorToString() {
   
 }
 
-///////////////////////////////////////////////////////////////////////////////
-///                           Supporting routines                            //
-///////////////////////////////////////////////////////////////////////////////
+
+//Supporting routines
 
 /* serialTrigger prints a message, then waits for something
  * to come in from the serial port. */
