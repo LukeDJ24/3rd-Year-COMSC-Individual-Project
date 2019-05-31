@@ -128,13 +128,15 @@ void loop() {
     Array_Clr();
    
   } else {
+     // Outputs this message continually over the serial
      Serial.println("Waiting for button to be pressed...");
+     
      lcd.setCursor(0, 0);
      lcd.print("Please order...");
      lcd.setCursor(0, 1);
      lcd.print("                ");
   }
-  delay(500);
+  delay(200);
 }
 
 
