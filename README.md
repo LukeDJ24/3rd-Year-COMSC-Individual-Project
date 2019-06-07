@@ -3,4 +3,4 @@
 
 #Connection Diagram
 
-![connectiondiagram](https://user-images.githubusercontent.com/22751367/56817233-1a986700-683d-11e9-9d4f-66e59abdb72a.jpg)
+![connectiondiagram](https://user-images.githubusercontent.com/22751367/59131753-21051d00-896b-11e9-8018-2e133c703f67.jpg)
